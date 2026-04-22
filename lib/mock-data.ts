@@ -27,10 +27,25 @@ export const projects: Project[] = [
     status: "active",
   },
   {
-    id: "example-wip",
-    title: "Example WIP",
-    description: "A work-in-progress project. Replace this placeholder with real data.",
-    tags: ["TBD"],
+    id: "cloudcompile",
+    title: "CloudCompile",
+    description: "A GitHub organization for open-source tools, experiments, and collaborative side projects.",
+    tags: ["Open Source", "GitHub"],
+    url: "https://github.com/CloudCompile",
+    status: "active",
+  },
+  {
+    id: "subdomain-router",
+    title: "Subdomain Router",
+    description: "Lightweight Next.js middleware utility for routing requests to different app modules based on hostname.",
+    tags: ["Next.js", "Middleware", "TypeScript"],
+    status: "wip",
+  },
+  {
+    id: "devdash",
+    title: "DevDash",
+    description: "Personal admin dashboard for monitoring deployments, service health, and site analytics at a glance.",
+    tags: ["Dashboard", "Next.js", "TypeScript"],
     status: "wip",
   },
 ];
@@ -55,13 +70,35 @@ export const experiments: Experiment[] = [
     description: "Using Next.js middleware + App Router to serve different UI modules from a single deployment based on the incoming hostname.",
     date: "2024-04-01",
     tags: ["Next.js", "Routing", "Vercel"],
+    url: "https://github.com/CloudCompile/sneeze",
   },
   {
-    id: "placeholder",
-    title: "Placeholder Experiment",
-    description: "Add your own experiments here.",
-    date: "2024-01-01",
-    tags: ["TBD"],
+    id: "turbopack-perf",
+    title: "Turbopack Build Performance",
+    description: "Benchmarking cold-start build times with Turbopack vs Webpack on a mid-size Next.js app. Turbopack clocked ~4× faster incremental rebuilds.",
+    date: "2024-06-15",
+    tags: ["Turbopack", "Performance", "Next.js"],
+  },
+  {
+    id: "edge-middleware",
+    title: "Edge Middleware for A/B Testing",
+    description: "Implemented a lightweight A/B testing layer using Vercel Edge Middleware — cookie-based bucket assignment with zero-latency routing.",
+    date: "2024-09-20",
+    tags: ["Edge", "A/B Testing", "Vercel"],
+  },
+  {
+    id: "ai-codegen",
+    title: "AI-Assisted Code Generation",
+    description: "Exploring how far LLM-generated code can go without human review. Spoiler: farther than expected, but review still matters.",
+    date: "2025-01-10",
+    tags: ["AI", "LLM", "DX"],
+  },
+  {
+    id: "css-layers",
+    title: "CSS Cascade Layers with Tailwind",
+    description: "Using @layer to integrate Tailwind utilities with custom design tokens without specificity wars.",
+    date: "2025-03-05",
+    tags: ["CSS", "Tailwind", "Design"],
   },
 ];
 
@@ -108,6 +145,20 @@ export const serviceChecks: ServiceCheck[] = [
     latencyMs: 44,
     lastChecked: new Date().toISOString(),
   },
+  {
+    id: "status",
+    name: "status.cjhauser.me",
+    status: "operational",
+    latencyMs: 43,
+    lastChecked: new Date().toISOString(),
+  },
+  {
+    id: "admin",
+    name: "admin.cjhauser.me",
+    status: "operational",
+    latencyMs: 49,
+    lastChecked: new Date().toISOString(),
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -150,5 +201,112 @@ export const links: LinkItem[] = [
     url: "https://lab.cjhauser.me",
     description: "Experiments and tinkering",
     icon: "🧪",
+  },
+  {
+    id: "status",
+    label: "Status",
+    url: "https://status.cjhauser.me",
+    description: "Service health dashboard",
+    icon: "📡",
+  },
+  {
+    id: "rss",
+    label: "RSS Feed",
+    url: "https://cjhauser.me/rss.xml",
+    description: "Subscribe to updates",
+    icon: "📰",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Admin dashboard
+// ---------------------------------------------------------------------------
+
+export interface AdminStat {
+  id: string;
+  label: string;
+  value: string;
+  delta?: string;
+  deltaPositive?: boolean;
+  icon: string;
+}
+
+export const adminStats: AdminStat[] = [
+  {
+    id: "projects-total",
+    label: "Total Projects",
+    value: "4",
+    delta: "+1 this month",
+    deltaPositive: true,
+    icon: "🔨",
+  },
+  {
+    id: "experiments-total",
+    label: "Lab Experiments",
+    value: "5",
+    delta: "+2 this month",
+    deltaPositive: true,
+    icon: "🧪",
+  },
+  {
+    id: "uptime",
+    label: "Avg Uptime",
+    value: "99.98%",
+    delta: "Last 30 days",
+    icon: "📡",
+  },
+  {
+    id: "avg-latency",
+    label: "Avg Latency",
+    value: "45 ms",
+    delta: "-3 ms vs last week",
+    deltaPositive: true,
+    icon: "⚡",
+  },
+];
+
+export interface ActivityItem {
+  id: string;
+  type: "deploy" | "commit" | "alert" | "note";
+  message: string;
+  timestamp: string;
+}
+
+export const activityFeed: ActivityItem[] = [
+  {
+    id: "act-1",
+    type: "deploy",
+    message: "Deployed sneeze@main to production (Vercel)",
+    timestamp: "2025-04-21T22:10:00Z",
+  },
+  {
+    id: "act-2",
+    type: "commit",
+    message: "feat: add admin dashboard subdomain",
+    timestamp: "2025-04-21T21:45:00Z",
+  },
+  {
+    id: "act-3",
+    type: "commit",
+    message: "feat: enrich mock data across all pages",
+    timestamp: "2025-04-21T21:30:00Z",
+  },
+  {
+    id: "act-4",
+    type: "note",
+    message: "status.cjhauser.me added to service checks",
+    timestamp: "2025-04-20T14:00:00Z",
+  },
+  {
+    id: "act-5",
+    type: "deploy",
+    message: "Deployed sneeze@main to production (Vercel)",
+    timestamp: "2025-04-19T18:22:00Z",
+  },
+  {
+    id: "act-6",
+    type: "alert",
+    message: "lab.cjhauser.me latency spike — auto-resolved",
+    timestamp: "2025-04-15T09:05:00Z",
   },
 ];
