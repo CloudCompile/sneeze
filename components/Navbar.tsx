@@ -14,6 +14,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "lab", label: "Lab" },
   { key: "status", label: "Status" },
   { key: "links", label: "Links" },
+  { key: "admin", label: "Admin" },
 ];
 
 interface NavbarProps {
