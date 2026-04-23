@@ -42,7 +42,7 @@ export function useConversations() {
 
     let cancelled = false;
 
-    // Step 1: Create channel and attach ALL handlers synchronously BEFORE subscribe
+    // Create channel and attach ALL handlers BEFORE subscribe
     const channel = supabase.channel(`conversations:${user.id}`);
 
     channel.on(
@@ -70,7 +70,7 @@ export function useConversations() {
       }
     );
 
-    // Step 2: Subscribe AFTER all handlers are registered
+    // Subscribe AFTER all handlers are registered
     channel.subscribe((status) => {
       if (status === "SUBSCRIBED" && !cancelled) {
         setLoading(true);
