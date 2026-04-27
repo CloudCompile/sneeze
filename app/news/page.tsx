@@ -42,13 +42,7 @@ const emptyForm = (): NewArticleForm => ({
 });
 
 export default function NewsPage() {
-  const [currentView, setCurrentView] = useState<"home" | "article" | "login" | "admin">(() => {
-    if (typeof window === "undefined") return "home";
-    if (window.location.hash === "#admin") {
-      return localStorage.getItem("signal-admin-logged-in") ? "admin" : "login";
-    }
-    return "home";
-  });
+  const [currentView, setCurrentView] = useState<"home" | "article" | "login" | "admin">("home");
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -85,6 +79,17 @@ export default function NewsPage() {
         setError(err instanceof Error ? err.message : "Failed to load articles")
       )
       .finally(() => setLoading(false));
+  }, []);
+
+  // Initialize view based on hash on client-side only
+  useEffect(() => {
+    if (window.location.hash === "#admin") {
+      if (localStorage.getItem("signal-admin-logged-in")) {
+        setCurrentView("admin");
+      } else {
+        setCurrentView("login");
+      }
+    }
   }, []);
 
   // Hash-based routing
@@ -297,6 +302,7 @@ export default function NewsPage() {
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   placeholder="Enter password"
+                  autoComplete="new-password"
                   autoFocus
                 />
               </div>
