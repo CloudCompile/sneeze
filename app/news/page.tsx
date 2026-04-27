@@ -295,6 +295,7 @@ export default function NewsPage() {
           <div className="modal" style={{ maxWidth: "400px" }}>
             <h2 style={{ marginBottom: "1rem" }}>Admin Access</h2>
             <form onSubmit={handleAdminLogin}>
+              <input type="text" name="username" style={{ display: "none" }} autoComplete="username" />
               <div className="form-group">
                 <label>Password</label>
                 <input
@@ -302,7 +303,7 @@ export default function NewsPage() {
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   placeholder="Enter password"
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   autoFocus
                 />
               </div>
