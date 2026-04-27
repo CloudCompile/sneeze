@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
-const ADMIN_PASSWORD = "signal2026";
+import { useState, useEffect, useRef } from "react";
 
 interface Article {
   id: string;
@@ -67,6 +65,8 @@ export default function NewsPage() {
     return !!localStorage.getItem("signal-admin-logged-in");
   });
   const [adminPassword, setAdminPassword] = useState("");
+  // Verified password stored in memory only (not in the bundle or localStorage)
+  const verifiedPasswordRef = useRef<string>("");
   const [newArticle, setNewArticle] = useState<NewArticleForm>(emptyForm());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,20 +110,31 @@ export default function NewsPage() {
     document.body.className = isDarkMode ? "" : "light-mode";
   }, [isDarkMode]);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminPassword === ADMIN_PASSWORD) {
+    try {
+      const res = await fetch("/api/news/admin/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminPassword }),
+      });
+      if (!res.ok) {
+        alert("Invalid password");
+        return;
+      }
+      verifiedPasswordRef.current = adminPassword;
       setIsLoggedIn(true);
       localStorage.setItem("signal-admin-logged-in", "true");
       setAdminPassword("");
       setCurrentView("admin");
       window.location.hash = "#admin";
-    } else {
-      alert("Invalid password");
+    } catch {
+      alert("Login failed. Please try again.");
     }
   };
 
   const handleAdminLogout = () => {
+    verifiedPasswordRef.current = "";
     setIsLoggedIn(false);
     localStorage.removeItem("signal-admin-logged-in");
     setCurrentView("home");
@@ -147,7 +158,7 @@ export default function NewsPage() {
             .split(",")
             .map((t) => t.trim())
             .filter(Boolean),
-          adminPassword: ADMIN_PASSWORD,
+          adminPassword: verifiedPasswordRef.current,
         }),
       });
       if (!res.ok) {
@@ -175,7 +186,7 @@ export default function NewsPage() {
       const res = await fetch(`/api/news/articles/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminPassword: ADMIN_PASSWORD }),
+        body: JSON.stringify({ adminPassword: verifiedPasswordRef.current }),
       });
       if (!res.ok) throw new Error("Failed to delete article");
       setArticles((prev) => prev.filter((a) => a.id !== id));
