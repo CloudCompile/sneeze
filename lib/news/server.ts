@@ -17,6 +17,14 @@ function resolveSupabaseAnonKey() {
   );
 }
 
+function withTimeout(ms: number): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
+  return (input, init) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ms);
+    return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
+  };
+}
+
 export function getNewsServiceClient() {
   const url = resolveSupabaseUrl();
   const serviceRoleKey = resolveSupabaseServiceKey();
@@ -25,6 +33,7 @@ export function getNewsServiceClient() {
   }
   return createClient(url, serviceRoleKey, {
     auth: { persistSession: false },
+    global: { fetch: withTimeout(8000) },
   });
 }
 
@@ -36,7 +45,18 @@ export function getNewsAnonClient() {
   }
   return createClient(url, anonKey, {
     auth: { persistSession: false },
+    global: { fetch: withTimeout(8000) },
   });
+}
+
+/** Extract a human-readable message from any thrown value, including plain Supabase error objects. */
+export function extractErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && err !== null && "message" in err) {
+    const msg = (err as Record<string, unknown>).message;
+    if (typeof msg === "string" && msg.length > 0) return msg;
+  }
+  return fallback;
 }
 
 export function isValidNewsAdminPassword(provided: unknown): boolean {
