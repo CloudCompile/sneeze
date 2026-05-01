@@ -103,7 +103,8 @@ export async function POST(request: NextRequest) {
       },
     ]);
 
-    const parsed = JSON.parse(aiOutput) as {
+    const jsonText = aiOutput.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+    const parsed = JSON.parse(jsonText) as {
       subject?: string;
       preheader?: string;
       intro?: string;
