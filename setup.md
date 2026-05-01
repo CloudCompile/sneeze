@@ -12,7 +12,49 @@ Open the [Supabase SQL Editor](https://supabase.com/dashboard/project/xsbcsorbeg
 supabase/news-schema.sql
 ```
 
-This creates two tables (`news_articles`, `news_subscribers`) with RLS, indexes, and seed data.
+This creates three tables (`news_articles`, `news_subscribers`, `newsletter_issues`) with RLS, indexes, and seed data.
+
+> **Already ran an older version of this schema?** If you get a Supabase error like *"Could not find the table 'public.newsletter_issues' in the schema cache"*, the `newsletter_issues` table is missing. Run the migration below in the SQL Editor to add it without touching existing data:
+>
+> ```sql
+> CREATE TABLE IF NOT EXISTS public.newsletter_issues (
+>   id                 UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+>   week_start         DATE NOT NULL,
+>   week_end           DATE NOT NULL,
+>   status             TEXT NOT NULL DEFAULT 'draft',
+>   subject            TEXT NOT NULL,
+>   preheader          TEXT NOT NULL DEFAULT '',
+>   intro              TEXT NOT NULL DEFAULT '',
+>   highlights         JSONB NOT NULL DEFAULT '[]'::jsonb,
+>   closing            TEXT NOT NULL DEFAULT '',
+>   html               TEXT NOT NULL,
+>   text               TEXT NOT NULL,
+>   source_article_ids UUID[] NOT NULL DEFAULT '{}',
+>   ai_model           TEXT,
+>   approved_at        TIMESTAMPTZ,
+>   sent_at            TIMESTAMPTZ,
+>   sent_count         INTEGER NOT NULL DEFAULT 0,
+>   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+>   updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+> );
+>
+> ALTER TABLE public.newsletter_issues ENABLE ROW LEVEL SECURITY;
+>
+> CREATE INDEX IF NOT EXISTS idx_newsletter_issues_created_at ON public.newsletter_issues(created_at DESC);
+> CREATE INDEX IF NOT EXISTS idx_newsletter_issues_week_range  ON public.newsletter_issues(week_start, week_end);
+>
+> CREATE OR REPLACE FUNCTION public.news_update_updated_at()
+> RETURNS TRIGGER AS $$
+> BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+> $$ LANGUAGE plpgsql;
+>
+> DROP TRIGGER IF EXISTS newsletter_issues_updated_at ON public.newsletter_issues;
+> CREATE TRIGGER newsletter_issues_updated_at
+>   BEFORE UPDATE ON public.newsletter_issues
+>   FOR EACH ROW EXECUTE FUNCTION public.news_update_updated_at();
+> ```
+>
+> After running the SQL, go to **Project Settings → API** and click **Reload schema cache** (or wait ~60 s for it to refresh automatically).
 
 ---
 
