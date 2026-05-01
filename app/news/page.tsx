@@ -39,6 +39,20 @@ interface AiDraftRequest {
   references: string;
 }
 
+interface BatchDraft {
+  topic: string;
+  article?: {
+    title: string;
+    excerpt: string;
+    category: string;
+    tags: string[];
+    read_time: string;
+    body: string;
+  };
+  factChecks?: string[];
+  error?: string;
+}
+
 interface NewsletterIssue {
   id: string;
   week_start: string;
@@ -99,7 +113,12 @@ export default function NewsPage() {
   const [subscribing, setSubscribing] = useState(false);
   const [aiDraftRequest, setAiDraftRequest] = useState<AiDraftRequest>(emptyAiDraftRequest());
   const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [generatingWebDraft, setGeneratingWebDraft] = useState(false);
+  const [sonarModel, setSonarModel] = useState<"sonar" | "sonar-pro">("sonar");
   const [factChecks, setFactChecks] = useState<string[]>([]);
+  const [batchTopics, setBatchTopics] = useState("");
+  const [generatingBatch, setGeneratingBatch] = useState(false);
+  const [batchDrafts, setBatchDrafts] = useState<BatchDraft[]>([]);
   const [newsletterIssues, setNewsletterIssues] = useState<NewsletterIssue[]>([]);
   const [generatingNewsletter, setGeneratingNewsletter] = useState(false);
 
@@ -368,6 +387,115 @@ export default function NewsPage() {
     }
   };
 
+  const handleGenerateWebDraft = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!verifiedPasswordRef.current) {
+      alert("Please log in again before generating drafts.");
+      return;
+    }
+    if (!aiDraftRequest.topic.trim()) {
+      alert("Please provide a topic.");
+      return;
+    }
+    setGeneratingWebDraft(true);
+    try {
+      const res = await fetch("/api/news/articles/web-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminPassword: verifiedPasswordRef.current,
+          topic: aiDraftRequest.topic,
+          audience: aiDraftRequest.audience,
+          tone: aiDraftRequest.tone,
+          length: aiDraftRequest.length,
+          model: sonarModel,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Failed to generate web draft");
+      }
+      const payload = (await res.json()) as {
+        article: Partial<NewArticleForm> & { tags?: string[] };
+        factChecks?: string[];
+        citations?: string[];
+      };
+      setFactChecks(Array.isArray(payload.factChecks) ? payload.factChecks : []);
+      setNewArticle((prev) => ({
+        ...prev,
+        title: payload.article.title ?? prev.title,
+        category: payload.article.category ?? prev.category,
+        excerpt: payload.article.excerpt ?? prev.excerpt,
+        body: payload.article.body ?? prev.body,
+        read_time: payload.article.read_time ?? prev.read_time,
+        tags: Array.isArray(payload.article.tags) ? payload.article.tags.join(", ") : prev.tags,
+      }));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to generate web draft");
+    } finally {
+      setGeneratingWebDraft(false);
+    }
+  };
+
+  const handleBatchGenerate = async () => {
+    if (!verifiedPasswordRef.current) {
+      alert("Please log in again before generating drafts.");
+      return;
+    }
+    const topics = batchTopics
+      .split("\n")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    if (!topics.length) {
+      alert("Enter at least one topic.");
+      return;
+    }
+    if (topics.length > 5) {
+      alert("Maximum 5 topics at once.");
+      return;
+    }
+    setGeneratingBatch(true);
+    setBatchDrafts([]);
+    try {
+      const res = await fetch("/api/news/articles/batch-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminPassword: verifiedPasswordRef.current,
+          topics,
+          audience: aiDraftRequest.audience,
+          tone: aiDraftRequest.tone,
+          length: aiDraftRequest.length,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Batch generation failed");
+      }
+      const payload = (await res.json()) as { drafts: BatchDraft[] };
+      setBatchDrafts(Array.isArray(payload.drafts) ? payload.drafts : []);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Batch generation failed");
+    } finally {
+      setGeneratingBatch(false);
+    }
+  };
+
+  const loadBatchDraftIntoEditor = (draft: BatchDraft) => {
+    if (!draft.article) return;
+    setFactChecks(draft.factChecks ?? []);
+    setNewArticle((prev) => ({
+      ...prev,
+      title: draft.article!.title || prev.title,
+      category: draft.article!.category || prev.category,
+      excerpt: draft.article!.excerpt || prev.excerpt,
+      body: draft.article!.body || prev.body,
+      read_time: draft.article!.read_time || prev.read_time,
+      tags: draft.article!.tags.join(", "),
+    }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleGenerateWeeklyNewsletter = async () => {
     if (!verifiedPasswordRef.current) {
       alert("Please log in again before generating newsletter drafts.");
@@ -619,9 +747,31 @@ export default function NewsPage() {
                   placeholder="Optional source links or notes for the model."
                 />
               </div>
-              <button type="submit" className="btn btn-secondary" style={{ width: "100%" }} disabled={generatingDraft}>
-                {generatingDraft ? "Generating draft..." : "Generate Draft (Review Required)"}
-              </button>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "0.75rem" }}>
+                <button type="submit" className="btn btn-secondary" style={{ width: "100%" }} disabled={generatingDraft || generatingWebDraft}>
+                  {generatingDraft ? "Generating…" : "Generate Draft"}
+                </button>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                  <select
+                    value={sonarModel}
+                    onChange={(e) => setSonarModel(e.target.value as "sonar" | "sonar-pro")}
+                    style={{ height: "100%", padding: "0 0.5rem", borderRadius: "6px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: "inherit", fontSize: "0.8rem" }}
+                  >
+                    <option value="sonar">sonar</option>
+                    <option value="sonar-pro">sonar-pro</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={handleGenerateWebDraft}
+                    disabled={generatingDraft || generatingWebDraft}
+                    title="Search the web with Perplexity Sonar and generate a grounded draft"
+                    style={{ whiteSpace: "nowrap" }}
+                  >
+                    {generatingWebDraft ? "Searching…" : "Search Web & Draft"}
+                  </button>
+                </div>
+              </div>
             </form>
 
             {!!factChecks.length && (
@@ -632,6 +782,81 @@ export default function NewsPage() {
                     <li key={check}>{check}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+          </div>
+
+          <h1 style={{ margin: "3rem 0 2rem" }}>Batch Draft Generator</h1>
+
+          <div className="glass-card" style={{ marginBottom: "2rem" }}>
+            <div className="form-group">
+              <label>Topics — one per line (max 5)</label>
+              <textarea
+                value={batchTopics}
+                onChange={(e) => setBatchTopics(e.target.value)}
+                rows={5}
+                placeholder={"The rise of local newsletters\nAI tools in student journalism\nWhy print is making a comeback"}
+              />
+            </div>
+            <p style={{ opacity: 0.65, fontSize: "0.8rem", marginBottom: "1rem" }}>
+              Uses the audience, tone, and length settings from the AI Draft Assistant above. Generates all drafts in parallel.
+            </p>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ width: "100%" }}
+              onClick={handleBatchGenerate}
+              disabled={generatingBatch}
+            >
+              {generatingBatch ? "Generating drafts…" : "Generate All Drafts"}
+            </button>
+
+            {!!batchDrafts.length && (
+              <div style={{ display: "grid", gap: "1rem", marginTop: "1.5rem" }}>
+                {batchDrafts.map((draft, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      border: draft.error
+                        ? "1px solid rgba(255,80,80,0.35)"
+                        : "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: "8px",
+                      padding: "1rem",
+                    }}
+                  >
+                    {draft.error ? (
+                      <>
+                        <strong style={{ color: "#ff6b6b" }}>{draft.topic}</strong>
+                        <p style={{ fontSize: "0.85rem", opacity: 0.75, marginTop: "0.25rem" }}>{draft.error}</p>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+                          <div>
+                            <strong>{draft.article?.title}</strong>
+                            <p style={{ fontSize: "0.8rem", opacity: 0.65, marginTop: "0.2rem" }}>{draft.topic}</p>
+                            <p style={{ fontSize: "0.85rem", opacity: 0.85, marginTop: "0.5rem" }}>{draft.article?.excerpt}</p>
+                          </div>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+                            onClick={() => loadBatchDraftIntoEditor(draft)}
+                          >
+                            Load into Editor
+                          </button>
+                        </div>
+                        {!!draft.factChecks?.length && (
+                          <details style={{ marginTop: "0.75rem", fontSize: "0.8rem", opacity: 0.75 }}>
+                            <summary style={{ cursor: "pointer" }}>Fact checks ({draft.factChecks.length})</summary>
+                            <ul style={{ marginTop: "0.5rem", paddingLeft: "1.25rem" }}>
+                              {draft.factChecks.map((fc) => <li key={fc}>{fc}</li>)}
+                            </ul>
+                          </details>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>

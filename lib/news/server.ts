@@ -170,3 +170,44 @@ export async function generateNewsAiText(messages: AiMessage[]): Promise<string>
 
   throw new Error(lastError);
 }
+
+interface PerplexityResponse {
+  choices?: Array<{ message?: { content?: string | null } }>;
+  citations?: string[];
+}
+
+export async function generateWebDraft(
+  messages: AiMessage[],
+  model: string,
+): Promise<{ text: string; citations: string[] }> {
+  const apiKey =
+    process.env.PERPLEXITY_API_KEY ??
+    process.env.AI_API_KEY ??
+    process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "PERPLEXITY_API_KEY is not configured. Set it in your environment variables.",
+    );
+  }
+
+  const response = await fetch("https://api.perplexity.ai/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ model, messages, temperature: 0.3 }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.text();
+    throw new Error(`Perplexity API error (${response.status}): ${payload}`);
+  }
+
+  const payload = (await response.json()) as PerplexityResponse;
+  const text = payload.choices?.[0]?.message?.content?.trim() ?? "";
+  const citations = Array.isArray(payload.citations) ? payload.citations : [];
+
+  if (!text) throw new Error("Perplexity returned an empty response");
+  return { text, citations };
+}
