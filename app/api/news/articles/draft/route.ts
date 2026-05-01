@@ -48,7 +48,8 @@ ${references.length ? references.map((ref, i) => `${i + 1}. ${ref}`).join("\n") 
       { role: "user", content: prompt },
     ]);
 
-    const parsed = JSON.parse(result) as {
+    const jsonText = result.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+    let parsed: {
       title?: string;
       excerpt?: string;
       category?: string;
@@ -57,6 +58,11 @@ ${references.length ? references.map((ref, i) => `${i + 1}. ${ref}`).join("\n") 
       body?: string;
       fact_checks?: string[];
     };
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch {
+      throw new Error("AI returned invalid JSON — try again");
+    }
 
     return NextResponse.json({
       article: {

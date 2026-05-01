@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractErrorMessage, getNewsServiceClient, isValidNewsAdminPassword } from "@/lib/news/server";
-import { validateEmail } from "@/lib/validation";
+import { validateEmail, validateUUID } from "@/lib/validation";
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
+    if (!validateUUID(id)) {
+      return NextResponse.json({ error: "Invalid newsletter ID" }, { status: 400 });
+    }
     const body = (await request.json()) as { adminPassword?: string; to?: string };
 
     if (!isValidNewsAdminPassword(body.adminPassword)) {

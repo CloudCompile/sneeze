@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractErrorMessage, getNewsServiceClient, isValidNewsAdminPassword } from "@/lib/news/server";
+import { validateUUID } from "@/lib/validation";
 
 interface IssuePatchBody {
   adminPassword?: string;
@@ -15,6 +16,9 @@ interface IssuePatchBody {
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
+    if (!validateUUID(id)) {
+      return NextResponse.json({ error: "Invalid newsletter ID" }, { status: 400 });
+    }
     const body = (await request.json()) as IssuePatchBody;
 
     if (!isValidNewsAdminPassword(body.adminPassword)) {
