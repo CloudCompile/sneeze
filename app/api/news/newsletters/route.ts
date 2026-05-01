@@ -32,7 +32,7 @@ function buildWeeklyPrompt(articles: ArticleRow[], weekStart: string, weekEnd: s
         `Author: ${article.author}\n` +
         `Date: ${article.date}\n` +
         `Excerpt: ${article.excerpt}\n` +
-        `Link: https://news.cjhauser.me/#article-${article.id}`
+        `Link: ${process.env.NEXT_PUBLIC_SITE_URL ?? "https://news.cjhauser.me"}/#article-${article.id}`
     )
     .join("\n\n");
 
@@ -103,7 +103,8 @@ export async function POST(request: NextRequest) {
       },
     ]);
 
-    const parsed = JSON.parse(aiOutput) as {
+    const jsonText = aiOutput.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+    let parsed: {
       subject?: string;
       preheader?: string;
       intro?: string;
@@ -111,12 +112,26 @@ export async function POST(request: NextRequest) {
       closing?: string;
       html?: string;
     };
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch {
+      throw new Error("AI returned invalid JSON — try again");
+    }
 
     const subject = parsed.subject?.trim() || `Signal Weekly • ${week.startDate} to ${week.endDate}`;
     const preheader = parsed.preheader?.trim() || "Top stories from Signal this week.";
     const intro = parsed.intro?.trim() || "";
     const closing = parsed.closing?.trim() || "";
-    const highlights = Array.isArray(parsed.highlights) ? parsed.highlights : [];
+    const highlights = Array.isArray(parsed.highlights)
+      ? parsed.highlights.filter(
+          (h) =>
+            h &&
+            typeof h === "object" &&
+            typeof h.title === "string" &&
+            typeof h.summary === "string" &&
+            typeof h.link === "string",
+        )
+      : [];
     const html =
       parsed.html?.trim() ||
       `<h1>${subject}</h1><p>${intro}</p>${highlights

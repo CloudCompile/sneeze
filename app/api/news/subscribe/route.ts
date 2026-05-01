@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         } else {
           const { error: insertError } = await supabase
             .from("news_subscribers")
-            .insert({ email: normalizedEmail });
+            .insert({ email: normalizedEmail, subscribed_at: new Date().toISOString() });
           if (insertError) throw insertError;
         }
       } else {
