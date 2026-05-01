@@ -33,6 +33,7 @@ Go to your Vercel project → **Settings → Environment Variables** and add the
 | `NEWSLETTER_FROM_EMAIL` | `Signal <news@yourdomain.com>` | Sender address for newsletter sends. |
 | `NEXT_PUBLIC_SITE_URL` | `https://news.cjhauser.me` | Used by the weekly cron route for internal API invocation. |
 | `CRON_SECRET` | *(random long secret)* | Bearer token used by Vercel cron to authorize weekly generation route. |
+| `PERPLEXITY_API_KEY` | *(Perplexity API key)* | Required for the **Search Web & Draft** feature (Sonar model). Get one at [perplexity.ai](https://www.perplexity.ai/settings/api). Falls back to `AI_API_KEY` if unset. |
 
 > **Note:** `SUPABASE_SERVICE_ROLE_KEY` and `NEWS_ADMIN_PASSWORD` must **not** be prefixed with `NEXT_PUBLIC_` — they are server-side only.
 
