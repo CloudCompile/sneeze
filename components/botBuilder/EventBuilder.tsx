@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { EventHandler } from "@/lib/botBuilder/types";
+import { DISCORD_EVENTS } from "./AllDiscordEvents";
 
 interface EventBuilderProps {
   events: EventHandler[];
@@ -10,20 +11,16 @@ interface EventBuilderProps {
   onDeleteEvent: (id: string) => void;
 }
 
-const eventTypes = [
-  { value: "on_ready", label: "Bot Ready" },
-  { value: "on_message", label: "Message Received" },
-  { value: "on_member_join", label: "Member Joined" },
-  { value: "on_member_remove", label: "Member Left" },
-  { value: "on_reaction_add", label: "Reaction Added" },
-  { value: "on_voice_state_update", label: "Voice State Changed" },
-];
-
 const actionTypes = [
   { value: "send_message", label: "Send Message" },
   { value: "add_role", label: "Add Role" },
+  { value: "remove_role", label: "Remove Role" },
   { value: "delete_message", label: "Delete Message" },
+  { value: "ban_user", label: "Ban User" },
+  { value: "kick_user", label: "Kick User" },
+  { value: "mute_user", label: "Mute User" },
   { value: "log", label: "Log Event" },
+  { value: "custom_code", label: "Custom Code" },
 ];
 
 export function EventBuilder({
@@ -36,7 +33,7 @@ export function EventBuilder({
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState<Partial<EventHandler>>({
     type: "on_message",
-    action: "send_message",
+    action: "log",
     content: "",
     filter: "all",
   });
@@ -46,7 +43,7 @@ export function EventBuilder({
     setSelectedId(null);
     setFormData({
       type: "on_message",
-      action: "send_message",
+      action: "log",
       content: "",
       filter: "all",
     });
@@ -82,17 +79,24 @@ export function EventBuilder({
     setSelectedId(null);
   };
 
+  // Flatten events for display
+  const allEvents = DISCORD_EVENTS.flatMap((cat) => cat.events);
+  const getEventLabel = (eventType: string) => {
+    return allEvents.find((e) => e.value === eventType)?.label || eventType;
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4 bg-gradient-to-b from-slate-800/40 to-slate-900/40 rounded-xl backdrop-blur-sm border border-slate-700/50">
-      <h2 className="text-lg font-semibold text-slate-100">Events</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-slate-100">Events</h2>
+        <span className="text-xs text-slate-400">{events.length} events</span>
+      </div>
 
       <div className="space-y-2 max-h-48 overflow-y-auto">
         {events.map((evt) => {
-          const typeLabel =
-            eventTypes.find((t) => t.value === evt.type)?.label || evt.type;
+          const typeLabel = getEventLabel(evt.type);
           const actionLabel =
-            actionTypes.find((a) => a.value === evt.action)?.label ||
-            evt.action;
+            actionTypes.find((a) => a.value === evt.action)?.label || evt.action;
 
           return (
             <div
@@ -120,30 +124,38 @@ export function EventBuilder({
       {(isAdding || selectedId) && (
         <div className="space-y-3 p-3 bg-slate-800/50 rounded-lg border border-slate-600/30">
           <div>
-            <label className="text-xs font-medium text-slate-300">Event Type</label>
+            <label className="text-xs font-medium text-slate-300 block mb-1">
+              Event Type
+            </label>
             <select
               value={formData.type || "on_message"}
               onChange={(e) =>
                 setFormData({ ...formData, type: e.target.value as any })
               }
-              className="w-full mt-1 px-3 py-2 bg-slate-700/50 border border-slate-600/30 rounded text-sm text-slate-100 focus:outline-none focus:border-purple-400/50"
+              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/30 rounded text-sm text-slate-100 focus:outline-none focus:border-purple-400/50"
             >
-              {eventTypes.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
+              {DISCORD_EVENTS.map((category) => (
+                <optgroup key={category.category} label={category.category}>
+                  {category.events.map((event) => (
+                    <option key={event.value} value={event.value}>
+                      {event.label} - {event.description}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="text-xs font-medium text-slate-300">Action</label>
+            <label className="text-xs font-medium text-slate-300 block mb-1">
+              Action
+            </label>
             <select
-              value={formData.action || "send_message"}
+              value={formData.action || "log"}
               onChange={(e) =>
                 setFormData({ ...formData, action: e.target.value as any })
               }
-              className="w-full mt-1 px-3 py-2 bg-slate-700/50 border border-slate-600/30 rounded text-sm text-slate-100 focus:outline-none focus:border-purple-400/50"
+              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/30 rounded text-sm text-slate-100 focus:outline-none focus:border-purple-400/50"
             >
               {actionTypes.map((a) => (
                 <option key={a.value} value={a.value}>
@@ -154,15 +166,21 @@ export function EventBuilder({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-slate-300">Content</label>
+            <label className="text-xs font-medium text-slate-300 block mb-1">
+              Content/Code
+            </label>
             <textarea
-              placeholder="Message content or action details"
+              placeholder={
+                formData.action === "custom_code"
+                  ? "async def on_event(...):\n    # Your code here"
+                  : "Message content or action details"
+              }
               value={formData.content || ""}
               onChange={(e) =>
                 setFormData({ ...formData, content: e.target.value })
               }
-              className="w-full mt-1 px-3 py-2 bg-slate-700/50 border border-slate-600/30 rounded text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-400/50"
-              rows={2}
+              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/30 rounded text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-400/50 font-mono text-xs"
+              rows={3}
             />
           </div>
 
