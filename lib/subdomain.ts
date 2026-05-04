@@ -6,6 +6,7 @@
  *
  * Mapping:
  *   cjhauser.me          → "home"
+ *   dbb.cjhauser.me      → "bot-builder"
  *   projects.cjhauser.me → "projects"
  *   lab.cjhauser.me      → "lab"
  *   status.cjhauser.me   → "status"
@@ -14,11 +15,12 @@
  * Unknown / localhost fallback → "home"
  */
 
-export type SubdomainKey = "home" | "projects" | "lab" | "status" | "links" | "admin" | "adie" | "news" | "discord";
+export type SubdomainKey = "home" | "bot-builder" | "projects" | "lab" | "status" | "links" | "admin" | "adie" | "news" | "discord";
 
 const ROOT_DOMAIN = "cjhauser.me";
 
 const SUBDOMAIN_MAP: Record<string, SubdomainKey> = {
+  dbb: "bot-builder",
   projects: "projects",
   lab: "lab",
   status: "status",
