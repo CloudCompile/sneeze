@@ -12,11 +12,10 @@ const NAV_ITEMS: NavItem[] = [
   { key: "home", label: "Home" },
   { key: "projects", label: "Projects" },
   { key: "lab", label: "Lab" },
+  { key: "bot-builder", label: "Bot Builder" },
+  { key: "news", label: "News" },
   { key: "status", label: "Status" },
   { key: "links", label: "Links" },
-  { key: "admin", label: "Admin" },
-  { key: "adie", label: "Adie" },
-  { key: "news", label: "News" },
 ];
 
 interface NavbarProps {

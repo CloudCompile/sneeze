@@ -169,13 +169,6 @@ export const serviceChecks: ServiceCheck[] = [
     latencyMs: 43,
     lastChecked: new Date().toISOString(),
   },
-  {
-    id: "admin",
-    name: "admin.cjhauser.me",
-    status: "operational",
-    latencyMs: 49,
-    lastChecked: new Date().toISOString(),
-  },
 ];
 
 // ---------------------------------------------------------------------------

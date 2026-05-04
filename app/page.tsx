@@ -33,10 +33,12 @@ export default async function HomePage() {
         </p>
 
         {/* Quick nav cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 w-full max-w-xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 w-full max-w-2xl">
           {[
             { label: "Projects", href: "https://projects.cjhauser.me", emoji: "🔨" },
             { label: "Lab", href: "https://lab.cjhauser.me", emoji: "🧪" },
+            { label: "Bot Builder", href: "https://dbb.cjhauser.me", emoji: "🤖" },
+            { label: "News", href: "https://news.cjhauser.me", emoji: "📰" },
             { label: "Status", href: "https://status.cjhauser.me", emoji: "📡" },
             { label: "Links", href: "https://links.cjhauser.me", emoji: "🔗" },
           ].map(({ label, href, emoji }) => (
