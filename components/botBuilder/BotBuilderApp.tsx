@@ -10,10 +10,13 @@ import { ExportModal } from "./ExportModal";
 import { generateBotCode } from "@/lib/botBuilder/codeGenerator";
 import type { BotState, Command, EventHandler, BotConfig } from "@/lib/botBuilder/types";
 
+import { ModeToggle } from "./ModeToggle";
+
 export function BotBuilderApp() {
   const [view, setView] = useState<"template" | "builder">("template");
   const [showExport, setShowExport] = useState(false);
   const [showCodePreview, setShowCodePreview] = useState(false);
+  const [mode, setMode] = useState<"simple" | "advanced">("simple");
 
   const [state, setState] = useState<BotState>({
     config: {
@@ -149,6 +152,9 @@ export function BotBuilderApp() {
             </div>
           ) : (
             <div className="space-y-6">
+              {/* Mode Toggle */}
+              <ModeToggle mode={mode} onModeChange={setMode} />
+
               {/* Builder Layout */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Left Panel - Commands */}
@@ -158,6 +164,7 @@ export function BotBuilderApp() {
                     onAddCommand={handleAddCommand}
                     onUpdateCommand={handleUpdateCommand}
                     onDeleteCommand={handleDeleteCommand}
+                    mode={mode}
                   />
                 </div>
 
