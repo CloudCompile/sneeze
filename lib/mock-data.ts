@@ -156,6 +156,20 @@ export const serviceChecks: ServiceCheck[] = [
     lastChecked: new Date().toISOString(),
   },
   {
+    id: "bot-builder",
+    name: "dbb.cjhauser.me",
+    status: "operational",
+    latencyMs: 41,
+    lastChecked: new Date().toISOString(),
+  },
+  {
+    id: "news",
+    name: "news.cjhauser.me",
+    status: "operational",
+    latencyMs: 46,
+    lastChecked: new Date().toISOString(),
+  },
+  {
     id: "links",
     name: "links.cjhauser.me",
     status: "operational",
